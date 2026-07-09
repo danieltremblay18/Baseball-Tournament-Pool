@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Saisie des résultats — Classe {{ classe }}{% endblock %}
+{% block content %}
+<h1>Saisie des résultats</h1>
+
+<div class="tabs">
+  {% for c in classes %}
+  <a href="{{ url_for('admin.results', classe=c) }}" class="{{ 'active' if c==classe else '' }}">Classe {{ c }}</a>
+  {% endfor %}
+</div>
+
+<div class="note-info">
+  <strong>Équipe Locale</strong> : celle qui frappe en dernier (connue seulement une fois la partie jouée) —
+  nécessaire au calcul des fractions de manches. <strong>Manches complètes</strong> = dernière manche jouée
+  (6 en temps normal). <strong>Prévues</strong> = longueur réglementaire (6 ; mettre 5 si journée écourtée).
+  <strong>Forfait</strong> : indiquez le gagnant par un score plus élevé — le pointage officiel est recalculé.
+  <strong>Supplémentaires</strong> : saisissez le <em>Pointage régl.</em> (score nul atteint après le réglementaire, Note 4).
+  Le classement se met à jour automatiquement.
+</div>
+
+{% for pool in [1, 2, 3] %}
+<h2>Pool {{ pool }}</h2>
+<div class="scrollx">
+<table>
+  <tr>
+    <th>#</th><th>Équipe 1</th><th>Équipe 2</th>
+    <th class="num">Score 1</th><th class="num">Score 2</th><th>Équipe Locale</th>
+    <th class="num">Manches</th><th class="num">Retraits</th><th class="num">Prévues</th>
+    <th>Type de fin</th><th class="num">Pt régl. (suppl.)</th><th>Actions</th>
+  </tr>
+  {% for g in games if g.pool == pool %}
+  <tr id="g{{ g.id }}">
+    <td class="num">{{ g.partie }}</td>
+    <td>{{ g.team1 }}</td>
+    <td>{{ g.team2 }}</td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" type="number" name="score1" value="{{ g.score1 if g.score1 is not none else '' }}"></td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" type="number" name="score2" value="{{ g.score2 if g.score2 is not none else '' }}"></td>
+    <td>
+      <select form="f{{ g.id }}" name="local_team">
+        <option value="">—</option>
+        <option value="{{ g.team1 }}" {{ 'selected' if g.local_team==g.team1 else '' }}>{{ g.team1 }}</option>
+        <option value="{{ g.team2 }}" {{ 'selected' if g.local_team==g.team2 else '' }}>{{ g.team2 }}</option>
+      </select>
+    </td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" style="width:48px;" type="number" min="1" max="9" name="manches" value="{{ g.manches if g.manches is not none else '' }}"></td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" style="width:48px;" type="number" min="0" max="2" name="retraits" value="{{ g.retraits if g.retraits is not none else '' }}"></td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" style="width:48px;" type="number" min="1" max="9" name="manches_prevues" value="{{ g.manches_prevues if g.manches_prevues is not none else 6 }}"></td>
+    <td>
+      <select form="f{{ g.id }}" name="type_fin">
+        {% for t in type_options %}
+        <option value="{{ t }}" {{ 'selected' if (g.type_fin or 'Normal')==t else '' }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td class="num"><input form="f{{ g.id }}" class="inputcell" style="width:48px;" type="number" min="0" name="pointage_regl" value="{{ g.pointage_regl if g.pointage_regl is not none else '' }}"></td>
+    <td style="white-space:nowrap;">
+      <form id="f{{ g.id }}" method="post" action="{{ url_for('admin.save_result', game_id=g.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="primary" title="Enregistrer">💾</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.clear_result', game_id=g.id) }}" class="inline"
+            onsubmit="return confirm('Effacer le résultat de la partie #{{ g.partie }} ?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="danger" title="Effacer">✕</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endfor %}
+
+{% if current_user.is_admin %}
+<div class="card">
+  <h2 style="margin-top:0;">Actions admin</h2>
+  <form method="post" action="{{ url_for('admin.simulate') }}" class="inline"
+        onsubmit="return confirm('Injecter des résultats FICTIFS de test sur tout l\'horaire ? À effacer avant le vrai tournoi.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">🧪 Simuler des résultats (test)</button>
+  </form>
+  <form method="post" action="{{ url_for('admin.clear_all') }}" class="inline"
+        onsubmit="return confirm('Effacer TOUS les résultats (horaire conservé) ?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="danger">Effacer tous les résultats</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

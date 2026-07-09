@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Horaire — Admin{% endblock %}
+{% block content %}
+<h1>Horaire du tournoi</h1>
+
+{% if current_user.is_admin %}
+<div class="card">
+  <h2 style="margin-top:0;">Importer l'horaire</h2>
+  <p class="muted">Importe les parties de pool (« # pool » comme « 3A ») depuis l'onglet
+     « Horaire globalArbitre » d'un fichier Excel du tournoi. Sans fichier, l'horaire 2026
+     du dépôt est utilisé.</p>
+  <form method="post" action="{{ url_for('admin.schedule_import') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p><input type="file" name="file" accept=".xlsx"></p>
+    <p><label><input type="checkbox" name="replace" value="1"> Remplacer l'horaire existant (efface toutes les parties et résultats)</label></p>
+    <button type="submit" class="primary"
+            onclick="return confirm('Importer l\'horaire ?');">Importer</button>
+  </form>
+</div>
+{% endif %}
+
+{% for c in classes %}
+<h2>Classe {{ c }}</h2>
+{% for pool in [1, 2, 3] %}
+<h3 style="margin:10px 0 4px;">Pool {{ pool }} — équipes :
+  <span class="muted">{{ (teams[c][pool] or []) | join(', ') }}</span></h3>
+<div class="scrollx">
+<table>
+  <tr><th>#</th><th>Jour</th><th>Heure</th><th>Terrain</th><th>Équipe 1</th><th>Équipe 2</th><th>Statut</th></tr>
+  {% for g in data[c] if g.pool == pool %}
+  <tr>
+    <td class="num">{{ g.partie }}</td><td>{{ g.jour }}</td><td>{{ g.heure }}</td><td>{{ g.terrain }}</td>
+    <td>{{ g.team1 }}</td><td>{{ g.team2 }}</td>
+    <td>{% if g.played %}<strong>{{ g.score1 }}–{{ g.score2 }}</strong>{% else %}<span class="muted">à jouer</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endfor %}
+{% endfor %}
+{% endblock %}

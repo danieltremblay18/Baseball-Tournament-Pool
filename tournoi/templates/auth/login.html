@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Connexion — Tournoi Baseball 13U{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px; margin:60px auto;">
+  <h1 style="margin-top:0;">🏆 Connexion</h1>
+  <p class="muted">Zone registraire du tournoi 13U. La page publique des classements
+     reste accessible sans connexion.</p>
+  <form method="post" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p><label>Identifiant<br><input type="text" name="username" autofocus required style="width:100%;"></label></p>
+    <p><label>Mot de passe<br><input type="password" name="password" required style="width:100%;"></label></p>
+    <button type="submit" class="primary" style="width:100%;">Se connecter</button>
+  </form>
+  <p class="muted" style="margin-top:16px;"><a href="{{ url_for('public.index') }}">← Voir les classements publics</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+# Blueprint Render.com — déploie l'app Flask du tournoi.
+# Après le 1er déploiement, ouvrir le Shell du service et lancer :
+#     flask --app wsgi seed-schedule            # importe l'horaire 2026
+#     flask --app wsgi create-user <nom> --admin   # crée un compte admin
+#
+# Les secrets (DATABASE_URL Neon, SECRET_KEY) se saisissent dans le dashboard
+# Render (onglet Environment) — ils ne sont PAS versionnés ici.
+services:
+  - type: web
+    name: tournoi-baseball-13u
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 2 --timeout 60
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: SECRET_KEY
+        generateValue: true      # Render génère une clé aléatoire
+      - key: DATABASE_URL
+        sync: false              # à coller depuis Neon (postgresql://…?sslmode=require)
+      - key: DISPLAY_TZ
+        value: America/Montreal
+      - key: TOURNAMENT_TITLE
+        value: TOURNOI PROVINCIAL DE BASEBALL 13U 2026 DE RIMOUSKI

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Admin — Tournoi Baseball 13U{% endblock %}</title>
+<style>
+  :root{ --dark:#37474f; --line:#e0e0e0; --input:#fff9c4; --calc:#eeeeee;
+         --first:#c8e6c9; --second:#bbdefb; --accent:#1e88e5; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:#eceff1; color:#263238;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  a{color:var(--accent); text-decoration:none;} a:hover{text-decoration:underline;}
+  header.topbar{background:var(--dark); color:#fff; padding:10px 16px; display:flex;
+       flex-wrap:wrap; align-items:center; gap:14px;}
+  header.topbar .brand{font-weight:700; font-size:16px;}
+  header.topbar nav{display:flex; flex-wrap:wrap; gap:12px; flex:1;}
+  header.topbar nav a{color:#cfd8dc; font-size:14px;}
+  header.topbar nav a.active{color:#fff; font-weight:700;}
+  header.topbar .user{font-size:13px; color:#b0bec5;}
+  main{max-width:1200px; margin:0 auto; padding:16px 16px 60px;}
+  h1{font-size:20px;} h2{font-size:17px; margin-top:24px;}
+  .flashes{list-style:none; padding:0; margin:12px 0;}
+  .flashes li{padding:9px 14px; border-radius:8px; margin-bottom:6px; font-size:14px;}
+  .flash-success{background:#e8f5e9; border:1px solid #a5d6a7;}
+  .flash-danger{background:#ffebee; border:1px solid #ef9a9a;}
+  .flash-warning{background:#fff8e1; border:1px solid #ffe082;}
+  .flash-info,.flash-message{background:#e3f2fd; border:1px solid #90caf9;}
+  table{border-collapse:collapse; width:100%; background:#fff;}
+  th,td{border:1px solid var(--line); padding:6px 8px; font-size:13px; text-align:left;}
+  th{background:#f5f5f5; font-size:12px; text-transform:uppercase; letter-spacing:.3px; color:#546e7a;}
+  td.num,th.num{text-align:center; font-variant-numeric:tabular-nums;}
+  .tabs{display:flex; gap:8px; margin:14px 0;}
+  .tabs a{padding:7px 16px; border:1px solid #b0bec5; border-radius:999px; background:#fff; color:#37474f;}
+  .tabs a.active{background:var(--dark); color:#fff; border-color:var(--dark); font-weight:600;}
+  button, .btn{cursor:pointer; border:1px solid #b0bec5; background:#fff; color:#37474f;
+       border-radius:8px; padding:6px 12px; font-size:13px;}
+  button.primary,.btn.primary{background:var(--accent); color:#fff; border-color:var(--accent);}
+  button.danger,.btn.danger{background:#c62828; color:#fff; border-color:#c62828;}
+  input[type=number], input[type=text], input[type=password], select{
+       padding:5px 6px; border:1px solid #b0bec5; border-radius:6px; font-size:13px; background:#fff;}
+  input.inputcell{background:var(--input); width:64px;}
+  .card{background:#fff; border-radius:12px; box-shadow:0 1px 4px rgba(0,0,0,.1);
+       padding:16px; margin:16px 0;}
+  .muted{color:#78909c; font-size:13px;}
+  .rowform{margin:0;}
+  .note-info{background:#e3f2fd; border-left:4px solid var(--accent); padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:13px;}
+  .note-warn{background:#fff8e1; border-left:4px solid #f9a825; padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:13px;}
+  tr.first td{background:var(--first);} tr.second td{background:var(--second);}
+  .scrollx{overflow-x:auto;}
+  .inline{display:inline;}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<header class="topbar">
+  <span class="brand">🏆 Tournoi 13U — Admin</span>
+  <nav>
+    <a href="{{ url_for('admin.results') }}" class="{{ 'active' if request.endpoint=='admin.results' else '' }}">Saisie</a>
+    <a href="{{ url_for('admin.standings') }}" class="{{ 'active' if request.endpoint=='admin.standings' else '' }}">Classements</a>
+    <a href="{{ url_for('admin.schedule') }}" class="{{ 'active' if request.endpoint=='admin.schedule' else '' }}">Horaire</a>
+    <a href="{{ url_for('admin.ledger') }}" class="{{ 'active' if request.endpoint=='admin.ledger' else '' }}">Grand livre</a>
+    <a href="{{ url_for('admin.export') }}">Export</a>
+    <a href="{{ url_for('public.index') }}" target="_blank">Page publique ↗</a>
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('auth.users') }}" class="{{ 'active' if request.endpoint=='auth.users' else '' }}">Utilisateurs</a>
+    {% endif %}
+  </nav>
+  <span class="user">{{ current_user.username }}{% if current_user.is_admin %} (admin){% endif %} ·
+    <a href="{{ url_for('auth.change_password') }}">Mot de passe</a> ·
+    <a href="{{ url_for('auth.logout') }}">Déconnexion</a></span>
+</header>
+{% endif %}
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for category, message in messages %}
+          <li class="flash-{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

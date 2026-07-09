@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Grand livre — Admin{% endblock %}
+{% block content %}
+<h1>Grand livre des matchs</h1>
+<p class="muted">Audit façon « compte bancaire » : une ligne = une équipe dans un match. Les colonnes
+   « Somme » cumulent progressivement ; le cumul final de chaque équipe doit égaler PP/PC/MO/MD du
+   tableau de pool. Trié Classe → Pool → Équipe → Partie #.</p>
+<div class="scrollx">
+<table>
+  <tr>
+    <th>Cl</th><th>Pool</th><th>#</th><th>Équipe</th><th>Adversaire</th><th>Résultat</th>
+    <th>Score</th><th>Loc/Vis</th>
+    <th class="num">PC</th><th class="num">Σ PC</th><th class="num">MD</th><th class="num">Σ MD</th><th class="num">RD</th>
+    <th class="num">PP</th><th class="num">Σ PP</th><th class="num">MO</th><th class="num">Σ MO</th><th class="num">RO</th>
+  </tr>
+  {% for r in rows %}
+  <tr class="{{ 'first' if r.resultat=='Victoire' else ('' if r.resultat=='Nul' else '') }}">
+    <td>{{ r.classe }}</td><td class="num">{{ r.pool }}</td><td class="num">{{ r.partie }}</td>
+    <td>{{ r.equipe }}</td><td>{{ r.adversaire }}</td>
+    <td>{{ r.resultat }}</td><td class="num">{{ r.score }}</td><td>{{ r.locVis }}</td>
+    <td class="num">{{ r.pcRow }}</td><td class="num"><strong>{{ r.cumPc }}</strong></td>
+    <td class="num">{{ r.mdRow }}</td><td class="num"><strong>{{ r.cumMd }}</strong></td><td class="num">{{ r.rd }}</td>
+    <td class="num">{{ r.ppRow }}</td><td class="num"><strong>{{ r.cumPp }}</strong></td>
+    <td class="num">{{ r.moRow }}</td><td class="num"><strong>{{ r.cumMo }}</strong></td><td class="num">{{ r.ro }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}

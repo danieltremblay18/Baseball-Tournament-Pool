@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Classements — Classe {{ classe }}{% endblock %}
+
+{% macro tiebreak_table(tb, classe, scope) %}
+  <div id="tb-{{ scope }}" class="card" style="margin-top:8px;">
+    <strong>Bris d'égalité ({{ tb.scopeLabel }})</strong>
+    {% if not tb.hasTies %}
+      <p class="muted" style="margin:6px 0 0;">Aucune égalité à départager — rangs établis par la fiche V-D.</p>
+    {% else %}
+      <form method="post" action="{{ url_for('admin.force_rank') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="classe" value="{{ classe }}">
+        <input type="hidden" name="scope" value="{{ scope }}">
+        <div class="scrollx"><table style="margin-top:8px;">
+          <tr>
+            <th>Équipe</th><th class="num">V-D</th><th class="num">PP</th><th class="num">PC</th>
+            <th class="num">MO</th><th class="num">MD</th><th class="num">RD</th><th class="num">RO</th>
+            <th>Critère décisif</th><th class="num">Forcer rang (P4)</th>
+          </tr>
+          {% for group in tb.groups %}
+            {% for r in group %}
+            <tr>
+              <td>{{ r.team }}</td>
+              <td class="num">{{ r.vd }}</td>
+              <td class="num">{{ r.pp }}</td>
+              <td class="num">{{ r.pc }}</td>
+              <td class="num">{{ r.mo }}</td>
+              <td class="num">{{ r.md }}</td>
+              <td class="num">{{ r.rd }}</td>
+              <td class="num">{{ r.ro }}</td>
+              <td>{{ r.crit }}</td>
+              <td class="num">
+                {% if r.inP4 %}
+                  <input class="inputcell" style="width:52px;" type="number" min="1"
+                         name="rank_{{ r.team }}" value="{{ r.forcedValue if r.forcedValue != '' else '' }}">
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            {% if not loop.last %}<tr><td colspan="10" style="height:6px; background:#fafafa;"></td></tr>{% endif %}
+          {% endfor %}
+        </table></div>
+        {% if tb.anySupp %}
+          <div class="note-info" style="margin-top:8px;">ℹ Manches supplémentaires exclues des ratios RD/RO (Note 4, Art. 42.11).</div>
+        {% endif %}
+        <p style="margin:8px 0 0;">
+          <button type="submit" class="primary">Enregistrer l'ordre « Forcer rang »</button>
+          <span class="muted">À remplir seulement sur les lignes « ⚠ Manuel (P4) » (ordre relatif ; le plus petit = meilleur).</span>
+        </p>
+      </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+<h1>Classements — Classe {{ classe }}</h1>
+
+<div class="tabs">
+  {% for c in classes %}
+  <a href="{{ url_for('admin.standings', classe=c) }}" class="{{ 'active' if c==classe else '' }}">Classe {{ c }}</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="background:var(--dark); color:#fff;">
+  <h2 style="margin:0 0 8px; color:#fff;">✅ Demi-finales — Classe {{ classe }}</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:24px;">
+    <div>
+      <div>1re place : <strong>{{ model.semifinals.positions[0] }}</strong></div>
+      <div>2e place : <strong>{{ model.semifinals.positions[1] }}</strong></div>
+      <div>3e place : <strong>{{ model.semifinals.positions[2] }}</strong></div>
+      <div>Meilleur 2e : <strong>{{ model.semifinals.positions[3] }}</strong></div>
+    </div>
+    <div>
+      <div>DF1 : <strong>{{ model.semifinals.demi1 }}</strong></div>
+      <div>DF2 : <strong>{{ model.semifinals.demi2 }}</strong></div>
+    </div>
+  </div>
+  <p class="muted" style="color:#b0bec5; margin:8px 0 0;">Mis à jour : {{ model.updatedAt }}</p>
+</div>
+
+<div id="pools"></div>
+{% for pc in model.pools %}
+<h2>Pool {{ pc.pool }}</h2>
+<div class="scrollx">
+<table>
+  <tr>
+    <th class="num">Rang</th><th>Équipe</th><th class="num">PJ</th><th class="num">V</th><th class="num">D</th>
+    <th class="num">PP</th><th class="num">PC</th><th class="num">MO</th><th class="num">MD</th>
+    <th class="num">RD</th><th class="num">RO</th><th class="num">Avanc.</th><th class="num">Forcer 2e</th>
+  </tr>
+  {% for r in pc.rows %}
+  <tr class="{{ 'first' if r.rank==1 else ('second' if r.rank==2 else '') }}">
+    <td class="num">{{ r.rank }}</td>
+    <td>{{ r.team }}</td>
+    <td class="num">{{ r.pj }}</td>
+    <td class="num">{{ r.v }}</td>
+    <td class="num">{{ r.d }}</td>
+    <td class="num">{{ r.pp }}</td>
+    <td class="num">{{ r.pc }}</td>
+    <td class="num">{{ r.mo }}</td>
+    <td class="num">{{ r.md }}</td>
+    <td class="num">{{ r.rd }}</td>
+    <td class="num">{{ r.ro }}</td>
+    <td class="num">{{ r.seed }}</td>
+    <td class="num">
+      <form method="post" action="{{ url_for('admin.force_second') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="classe" value="{{ classe }}">
+        <input type="hidden" name="team" value="{{ r.team }}">
+        <input type="checkbox" onchange="this.form.submit()" {{ 'checked' if r.forced2e else '' }}
+               title="Désigner comme 2e de pool (Note 5)">
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% if pc.secondRep.forced %}
+  <div class="note-info">ℹ 2e forcé par l'admin pour le Meilleur 2e (Étape B) : <strong>{{ pc.secondRep.team }}</strong> — Note 5, Art. 42.11.</div>
+{% endif %}
+{% if pc.secondRep.warning %}
+  <div class="note-warn">⚠ {{ pc.secondRep.warning }}</div>
+{% endif %}
+{% if pc.suppResolved %}
+  <div class="note-info">ℹ Partie(s) en manches supplémentaires : {{ pc.suppResolved | join(' ; ') }}. Le tableau de pool inclut toutes les manches (RD = PC ÷ MD) ; le bris d'égalité exclut les supplémentaires (Note 4).</div>
+{% endif %}
+{% if pc.suppMissing %}
+  <div class="note-warn">⚠ Partie(s) supplémentaires SANS « Pointage régl. » : {{ pc.suppMissing | join(' ; ') }}. Saisissez-le pour appliquer la Note 4.</div>
+{% endif %}
+{{ tiebreak_table(pc.tiebreak, classe, pc.scope) }}
+{% endfor %}
+
+<h2>{{ model.stepC.title }}</h2>
+<div class="scrollx">
+<table>
+  <tr><th class="num">Pos.</th><th>Équipe</th><th class="num">Pool</th><th class="num">V</th><th class="num">D</th>
+      <th class="num">RD</th><th class="num">RO</th><th class="num">PP</th><th class="num">PC</th><th>Note</th></tr>
+  {% for r in model.stepC.rows %}
+  <tr class="{{ 'first' if r.qualifies else '' }}">
+    <td class="num">{{ r.position }}</td><td>{{ r.team }}</td><td class="num">{{ r.pool }}</td>
+    <td class="num">{{ r.v }}</td><td class="num">{{ r.d }}</td>
+    <td class="num">{{ r.rd }}</td><td class="num">{{ r.ro }}</td>
+    <td class="num">{{ r.pp }}</td><td class="num">{{ r.pc }}</td><td>{{ r.note }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{{ tiebreak_table(model.stepC.tiebreak, classe, model.stepC.scope) }}
+
+<h2>{{ model.stepB.title }}</h2>
+<div class="scrollx">
+<table>
+  <tr><th class="num">Pos.</th><th>Équipe</th><th class="num">Pool</th><th class="num">V</th><th class="num">D</th>
+      <th class="num">RD</th><th class="num">RO</th><th class="num">PP</th><th class="num">PC</th><th>Note</th></tr>
+  {% for r in model.stepB.rows %}
+  <tr class="{{ 'second' if r.qualifies else '' }}">
+    <td class="num">{{ r.position }}</td><td>{{ r.team }}</td><td class="num">{{ r.pool }}</td>
+    <td class="num">{{ r.v }}</td><td class="num">{{ r.d }}</td>
+    <td class="num">{{ r.rd }}</td><td class="num">{{ r.ro }}</td>
+    <td class="num">{{ r.pp }}</td><td class="num">{{ r.pc }}</td><td>{{ r.note }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{{ tiebreak_table(model.stepB.tiebreak, classe, model.stepB.scope) }}
+{% endblock %}

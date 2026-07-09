@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Utilisateurs — Admin{% endblock %}
+{% block content %}
+<h1>Comptes registraires</h1>
+
+<div class="card">
+  <h2 style="margin-top:0;">Créer un compte</h2>
+  <form method="post" action="{{ url_for('auth.create_user') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Identifiant <input type="text" name="username" required></label>
+    <label>Mot de passe <input type="password" name="password" required></label>
+    <label><input type="checkbox" name="is_admin" value="1"> Admin</label>
+    <button type="submit" class="primary">Créer</button>
+  </form>
+  <p class="muted">Un <strong>admin</strong> peut gérer les comptes, importer l'horaire,
+     simuler et tout effacer. Un compte simple peut saisir les résultats et les forçages.</p>
+</div>
+
+<div class="card">
+  <table>
+    <tr><th>Identifiant</th><th>Rôle</th><th>Réinitialiser mot de passe</th><th></th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ 'Admin' if u.is_admin else 'Registraire' }}</td>
+      <td>
+        <form method="post" action="{{ url_for('auth.reset_password', user_id=u.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="password" name="password" placeholder="nouveau mot de passe" required>
+          <button type="submit">Réinitialiser</button>
+        </form>
+      </td>
+      <td>
+        <form method="post" action="{{ url_for('auth.delete_user', user_id=u.id) }}" class="inline"
+              onsubmit="return confirm('Supprimer {{ u.username }} ?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="danger">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
