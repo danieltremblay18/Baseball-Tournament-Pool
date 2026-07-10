@@ -63,6 +63,7 @@
 
 <div class="card" style="background:var(--dark); color:#fff;">
   <h2 style="margin:0 0 8px; color:#fff;">✅ Demi-finales — Classe {{ classe }}</h2>
+  {% if model.poolsComplete %}
   <div style="display:flex; flex-wrap:wrap; gap:24px;">
     <div>
       <div>1re place : <strong>{{ model.semifinals.positions[0] }}</strong></div>
@@ -75,6 +76,9 @@
       <div>DF2 : <strong>{{ model.semifinals.demi2 }}</strong></div>
     </div>
   </div>
+  {% else %}
+  <div>⏳ Les positions de demi-finale (1-2-3-4) s'afficheront lorsque toutes les parties des pools de la classe {{ classe }} auront été jouées — Parties jouées : {{ model.poolPlayed }}/{{ model.poolTotal }}.</div>
+  {% endif %}
   <p class="muted" style="color:#b0bec5; margin:8px 0 0;">Mis à jour : {{ model.updatedAt }}</p>
 </div>
 
@@ -130,6 +134,7 @@
 {{ tiebreak_table(pc.tiebreak, classe, pc.scope) }}
 {% endfor %}
 
+{% if model.poolsComplete %}
 <h2>{{ model.stepC.title }}</h2>
 <div class="scrollx">
 <table>
@@ -163,4 +168,7 @@
 </table>
 </div>
 {{ tiebreak_table(model.stepB.tiebreak, classe, model.stepB.scope) }}
+{% else %}
+<div class="note-info" style="margin-top:16px;">⏳ Les positions de demi-finale (1-2-3-4) — Étape C (classement des 1ers) et Étape B (meilleur 2e) — s'afficheront lorsque toutes les parties des pools de la classe {{ classe }} auront été jouées. Parties jouées : {{ model.poolPlayed }}/{{ model.poolTotal }}. Les tableaux de pool ci-dessus restent à jour en direct.</div>
+{% endif %}
 {% endblock %}

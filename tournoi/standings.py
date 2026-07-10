@@ -195,6 +195,21 @@ def get_match_rows(classe):
     return out
 
 
+def pool_play_completion(classe):
+    """État d'avancement des parties de pool d'une classe (``poolPlayCompletion``).
+
+    Réutilise ``get_match_rows`` : une partie est ``played`` dès que ses deux
+    scores sont saisis — exactement le critère du moteur (``get_game_results``).
+    Sert à ne révéler les positions inter-pools (1-2-3-4 des demi-finales)
+    qu'une fois toutes les parties de pool de la classe jouées.
+    """
+    rows = get_match_rows(classe)
+    total = len(rows)
+    played = sum(1 for r in rows if r['played'])
+    return {'total': total, 'played': played,
+            'complete': total > 0 and played == total}
+
+
 # ---------------------------------------------------------------------------
 #  Forçages admin (Note 5 / Priorité 4)
 # ---------------------------------------------------------------------------
@@ -316,6 +331,19 @@ def compute_standings_model(classe):
             'seed': 4 if i == 0 else None,
         })
 
+    # Révélation conditionnelle : tant que toutes les parties de pool de la classe
+    # ne sont pas jouées, le classement inter-pools (positions 1-2-3-4) n'est pas
+    # mathématiquement fiable. On neutralise donc les seeds pour ne rien laisser
+    # transparaître ; le template masque en plus les cartes Meilleur 2e/Demi-finales.
+    completion = pool_play_completion(classe)
+    reveal = completion['complete']
+    if not reveal:
+        for pc in pools:
+            for s in pc['standings']:
+                s['seed'] = None
+        for s in seconds_card:
+            s['seed'] = None
+
     p1 = ordered_firsts[0] if len(ordered_firsts) > 0 else ''
     p2 = ordered_firsts[1] if len(ordered_firsts) > 1 else ''
     p3 = ordered_firsts[2] if len(ordered_firsts) > 2 else ''
@@ -331,6 +359,9 @@ def compute_standings_model(classe):
             'demi1': {'a': p1, 'b': p4},
             'demi2': {'a': p2, 'b': p3},
         },
+        'poolsComplete': reveal,
+        'poolPlayed': completion['played'],
+        'poolTotal': completion['total'],
         'updatedAt': _updated_at_label(),
     }
 
@@ -454,6 +485,13 @@ def build_admin_model(classe):
     if ordered_seconds:
         seed_by_team[ordered_seconds[0]] = 4
 
+    # Révélation conditionnelle (cf. compute_standings_model) : la colonne « Avanc. »
+    # et les Sections 4/5 + récap Demi-finales ne s'affichent qu'une fois toutes les
+    # parties de pool de la classe jouées. seed_source vide => colonne « Avanc. » vide.
+    completion = pool_play_completion(classe)
+    reveal = completion['complete']
+    seed_source = seed_by_team if reveal else {}
+
     # -------- Sections de pool --------
     pool_sections = []
     for pd in pool_data:
@@ -477,7 +515,7 @@ def build_admin_model(classe):
                 'md': format_fraction(s['defInnFull']),
                 'rd': ('{:.3f}'.format(s['raRatioFull']) if s['defInnFull'] > 0 else '—'),
                 'ro': ('{:.3f}'.format(s['rsRatioFull']) if s['offInnFull'] > 0 else '—'),
-                'seed': seed_by_team.get(s['team'], ''),
+                'seed': seed_source.get(s['team'], ''),
                 'forced2e': s['team'] in pd['marked'],
             })
 
@@ -556,6 +594,9 @@ def build_admin_model(classe):
             'demi1': '{}  vs  {}'.format(p1, p4),
             'demi2': '{}  vs  {}'.format(p2, p3),
         },
+        'poolsComplete': reveal,
+        'poolPlayed': completion['played'],
+        'poolTotal': completion['total'],
         'updatedAt': _updated_at_label(),
     }
 

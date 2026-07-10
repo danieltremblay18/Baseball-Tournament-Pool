@@ -87,6 +87,21 @@ view (real ratios, no tiebreak tables); the admin model adds the bris-d'égalit�
 tables (regulation basis, Note 4), the decisive-criterion column, and the forcing
 inputs.
 
+**Conditional reveal of the semifinal seeding (per class).** The inter-pool ranking
+— positions 1-2-3 (Étape C over the pool winners) and position 4 (Étape B, best 2nd)
+— is only mathematically reliable once *every* pool game of that class is played;
+showing it mid-tournament produces a provisional ranking that flips on each score and
+misleads the communications volunteers who screenshot the public page. So
+`pool_play_completion(classe)` (in `standings.py`, built on `get_match_rows`) gates it:
+until a class's pool games are all played, both `compute_standings_model` and
+`build_admin_model` set `poolsComplete=False` (plus `poolPlayed`/`poolTotal`), blank
+the seed/« Avanc. » column, and the templates hide the Meilleur-2e + Demi-finales
+blocks behind a ⏳ waiting banner. **This is per class, independently** — class A
+reveals as soon as its 3 pools finish, without waiting for B. The live pool tables
+(rank, 1st/2nd highlight, V-D, RD, tiebreaks, forcing) stay visible throughout; only
+the inter-pool block is masked. Forcing cells for scopes C/B simply don't appear until
+the class is complete, which is harmless — Priority-4 inter-pool only matters then.
+
 **No calculated state is stored.** Unlike the Sheets version (which wrote P–T
 columns and rebuilt `Classements` tabs), every standings view here is recomputed
 from the DB on each request. There is therefore no live-recalc trigger, no
